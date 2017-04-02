@@ -4,4 +4,47 @@ plugins:
     executor: central_deployment_agent
     source: https://github.com/cloudify-examples/cloudify-requests-plugin/archive/master.zip
     package_name: cloudify-requests-plugin
-    package_version: '0.0.1.dev0'
+    package_version: '0.0.1.dev1'
+
+data_types:
+
+  cloudify.datatypes.URI:
+    properties:
+      protocol:
+        description: >
+          The IP Protocol.
+        type: string
+        default: 'http'
+        required: true # This is redundant because a default is provided. We discourage redundancy, but do so here for instruction.
+      domain:
+        description: >
+          The URI domain.
+        type: string
+        required: true
+      path:
+        description: >
+          Additional URI path.
+
+node_types:
+
+  cloudify.nodes.requests.Object:
+    derived_from: cloudify.nodes.Root
+    properties:
+      endpoint:
+        description: The API object endpoint.
+        type: cloudify.datatypes.URI
+        required: true
+      configuration:
+        description: >
+          The configuration of the API Resource that you are managing.
+          No validation is provided for the cloudify.nodes.requests.Object type.
+        default: {}
+    interfaces:
+      cloudify.lifecycle.interfaces:
+        create:
+          implementation: req.cloudify_requests.post
+          inputs:
+            data:
+              default: {}
+        delete:
+          implementation: req.cloudify_requests.delete

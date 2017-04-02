@@ -1,3 +1,7 @@
 0.0.1.dev0:
   - Added the README.md.
   - Added the cloudify_requests package.
+0.0.1.dev1:
+  - Added the URI data type.
+  - Added the cloudify.nodes.requests.Object node type.
+  - Added a rudimentary implementation of create and delete.
