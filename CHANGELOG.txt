@@ -1,0 +1,3 @@
+0.0.1.dev0:
+  - Added the README.md.
+  - Added the cloudify_requests package.
