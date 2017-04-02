@@ -20,7 +20,7 @@ setup(
     name='cloudify-requests-plugin',
     author='Cloudify by Gigaspaces',
     author_email='hello@getcloudify.com',
-    version='0.0.1.dev1',
+    version='0.0.1.dev2',
     description='Cloudify plugin for HTTP Requests.',
     packages=['cloudify_requests'],
     license='LICENSE',

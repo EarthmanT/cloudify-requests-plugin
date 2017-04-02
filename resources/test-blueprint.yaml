@@ -1,0 +1,50 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+description: >
+  Test the cloudify.nodes.requests.Object node type lifecycle.
+  Create a test endpoint here: http://requestb.in.
+
+imports:
+  - http://www.getcloudify.org/spec/cloudify/4.0/types.yaml
+  - ../plugin.yaml
+
+inputs:
+
+  protocol:
+    default: http
+
+  domain:
+    default: requestb.in
+
+  path:
+    default:
+      - # Place the API code that you received from requestb.in after the dash (-) #
+
+  ##################################################################################
+  ## Or you can run the blueprint like this:
+  ## cfy install resources/test-blueprint.yaml -i "{'path': ['API CODE HERE']}"
+  ## Or create a YAML file like this:
+  #### FILE ####
+  # path:
+  #   - API CODE HERE
+  ##############
+  ## And run like this:
+  ## cfy install resources/test-blueprint.yaml -i inputs.yaml
+  ##################################################################################
+
+  resource_configuration:
+    default:
+      plugin: cloudify-requests-plugin
+      version: 0.0.1.dev1
+      blueprint: test-blueprint.yaml
+
+node_templates:
+
+  cloudify:
+    type: cloudify.nodes.requests.Object
+    properties:
+      endpoint:
+        protocol: { get_input: protocol }
+        domain: { get_input: domain }
+        path: { get_input: path }
+      configuration: { get_input: resource_configuration }

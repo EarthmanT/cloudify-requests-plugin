@@ -102,3 +102,44 @@ In this Python code, we see all the basics of Cloudify plugin development.
 First we imported Cloudify's developer context. We also imported an operation decorator, which injects the developer context into our python function. We also imported a special Exception class that we can use to tell Cloudify that a workflow has failed.
 
 Then comes the Python function. We access the node properties from the Cloudify CTX using _ctx.node.properties_. We take endpoint from there. We first check the data from the arguments to the function. If that's not available, we will take it from the node properties.
+
+#### Example and Test Blueprint Resources
+
+It is a good idea to publish in the plugin repository any blueprints that you use to test the functionality of your plugin.
+
+```yaml
+tosca_definitions_version: cloudify_dsl_1_3
+
+imports:
+  - http://www.getcloudify.org/spec/cloudify/4.0/types.yaml
+  - ../plugin.yaml
+
+inputs:
+
+  protocol:
+    default: http
+
+  domain:
+    default: requestb.in
+
+  path:
+    default:
+      - # Place the API code that you received from requestb.in after the dash (-) #
+
+  resource_configuration:
+    default:
+      plugin: cloudify-requests-plugin
+      version: 0.0.1.dev2
+      blueprint: test-blueprint.yaml
+
+node_templates:
+
+  cloudify:
+    type: cloudify.nodes.requests.Object
+    properties:
+      endpoint:
+        protocol: { get_input: protocol }
+        domain: { get_input: domain }
+        path: { get_input: path }
+      configuration: { get_input: resource_configuration }
+```

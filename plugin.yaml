@@ -4,7 +4,7 @@ plugins:
     executor: central_deployment_agent
     source: https://github.com/cloudify-examples/cloudify-requests-plugin/archive/master.zip
     package_name: cloudify-requests-plugin
-    package_version: '0.0.1.dev1'
+    package_version: '0.0.1.dev2'
 
 data_types:
 
@@ -40,11 +40,16 @@ node_types:
           No validation is provided for the cloudify.nodes.requests.Object type.
         default: {}
     interfaces:
-      cloudify.lifecycle.interfaces:
+      cloudify.interfaces.lifecycle:
         create:
-          implementation: req.cloudify_requests.post
+          implementation: req.cloudify_requests.request
           inputs:
+            method:
+              default: POST
             data:
               default: {}
         delete:
-          implementation: req.cloudify_requests.delete
+          implementation: req.cloudify_requests.request
+          inputs:
+            method:
+              default: DELETE
