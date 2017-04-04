@@ -32,7 +32,7 @@ Below is the minimum required directory structure for a Cloudify plugin:
 
 The ```setup.py``` contains the setup method from setuptools. It should at the very least provide:
 
-* The ```name``` of the plugin. This should follow the convention _cloudify-[name-of-project-to-support]-plugin_.
+* The ```name``` of the plugin. This should follow the convention cloudify-[project-name]-plugin.
 * The ```author```. This should be either your name or your team's name.
 * The ```author_email```. This is where users can turn for information about support, legal, etc.
 * The ```version```. This should be kept up to date.
@@ -59,24 +59,31 @@ setup(
 
 ```
 
-### Plugin packages
+### plugin packages
 
-The plugin Python code is contained in Python packages. These should be named according to the convention cloudify_[name-of-project-to-support]. Sometimes your plugin might have several packages. In such advanced scenarios, you should take into consideration that the Python package will be stored in a library with other Python packages and referenced by name. Do your best to avoid naming conflicts.
+The plugin Python code is contained in Python packages. These should be named according to the convention cloudify_[project-name]. Sometimes your plugin might have several packages. In such advanced scenarios, you should take into consideration that the Python package will be stored in a library with other Python packages and referenced by name. Do your best to avoid naming conflicts.
 
 
-### Contents of plugin.yaml
+### plugin.yaml
 
 The _plugin.yaml_ is the interaction between the Cloudify DSL and the plugin Python code.
+
+The most critical section is the ```plugins``` definition. Other frequently used sections are ```node_types```, ```relationships```, ```data_types```, and ```workflows```.
+
 
 #### plugins definition
 
 The essential feature of the plugin.yaml file is the plugins definition.
 
+It has the following format:
+
 ```yaml
 plugins:
-  req:
+  requests:
     executor: central_deployment_agent
 ```
+
+Here, ```requests``` is the project-name. The ```executor``` specifies which Cloudify agent will execute the plugin. The _central_deployment_agent_ indicates that the if the plugin is executed by a Cloudify Manager, then the worker agent on the manager will execute. If we use ```host_agent``` instead, then the agent worker on a managed host would execute the code. The ```host_agent``` executor is not recognized in _cfy local_.
 
 #### node_types
 
@@ -98,12 +105,12 @@ A _node type_ is used to define resource types, which are then used in blueprint
     interfaces:
       cloudify.lifecycle.interfaces:
         create:
-          implementation: req.cloudify_requests.post
+          implementation: requests.cloudify_requests.post
           inputs:
             data:
               default: {}
         delete:
-          implementation: req.cloudify_requests.delete
+          implementation: requests.cloudify_requests.delete
 ```
 
 In this _cloudify.nodes.requests.Object_, we say that the code for the create and delete operations is in the cloudify_requests package under the post and delete operations. We also add an expected input _data_ for the post operation.
