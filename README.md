@@ -6,8 +6,7 @@ A Cloudify plugin for making HTTP requests.
 **Please read this README completely for instructions on writing your own plugin.**
 
 _This plugin is intended as an example._
-It also works! Like this plugin, most plugins are wrappers around some technology. Most frequently, a plugin will be based on the Python bindings for a particular API, such as AWS (boto), Openstack (novaclient-python), Docker (docker-py), etc. Also a plugin is frequently based on a generic library such as fabric, subprocess or requests. This plugin is kept generic, although another plugin based on requests might make design decisions to better support a specific target API.
-
+It also works! Like this plugin, most plugins are wrappers around some Python library (or libraries). Most frequently, a plugin will be based on the Python bindings for a particular API, such as AWS (boto), Openstack (novaclient-python), Docker (docker-py), etc. Also a plugin is frequently based on a generic library such as fabric, subprocess or requests. Since this plugin is primarily an example, it's kept as generic as possible. However, other plugins, including those based on the ```requests``` library are usually less generic in their implementation in order to provide a better UX for the technology they are trying to support.
 
 
 ## Plugin directory structure
@@ -33,14 +32,16 @@ Below is the minimum required directory structure for a Cloudify plugin:
 
 The ```setup.py``` contains the setup method from setuptools. It should at the very least provide:
 
-* The ```name``` of the plugin. This should follow the convention cloudify-[name-of-project-to-support]-plugin.
+* The ```name``` of the plugin. This should follow the convention _cloudify-[name-of-project-to-support]-plugin_.
 * The ```author```. This should be either your name or your team's name.
 * The ```author_email```. This is where users can turn for information about support, legal, etc.
 * The ```version```. This should be kept up to date.
 * The ```description```. Something short.
-* A list of ```packages``` in the plugin. More about this later.
+* A list of ```packages``` in the plugin. More about this (below)[#plugin-packages].
 * A list of required libraries in ```install_requires```. Anything that is not shipped with Python.
 
+
+**Example:**
 
 ```python
 
@@ -57,6 +58,10 @@ setup(
 )
 
 ```
+
+### Plugin packages
+
+The plugin Python code is contained in Python packages. These should be named according to the convention cloudify_[name-of-project-to-support]. Sometimes your plugin might have several packages. In such advanced scenarios, you should take into consideration that the Python package will be stored in a library with other Python packages and referenced by name. Do your best to avoid naming conflicts.
 
 
 ### Contents of plugin.yaml
