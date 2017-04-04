@@ -1,0 +1,88 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+description: >
+  Derive a node type from cloudify.nodes.requests.Object that uses the cloudify.datatypes.auth data type and run against the github API.
+
+imports:
+  - http://www.getcloudify.org/spec/cloudify/4.0/types.yaml
+  - ../plugin.yaml
+
+inputs:
+
+  repo_owner:
+    type: string
+    default: earthmant
+
+  repo_repo:
+    type: string
+    default: cloudify-requests-plugin
+
+  auth:
+    description: A dictionary with username and password.
+    type: cloudify.datatypes.auth
+
+  issue_title:
+    type: string
+
+  issue_body:
+    type: string
+
+node_types:
+
+  cloudify.nodes.github.Issue:
+    derived_from: cloudify.nodes.requests.Object
+    properties:
+      endpoint:
+        default:
+          protocol: https
+          domain: api.github.com
+          path:
+            - repos
+            - { get_input: repo_owner }
+            - { get_input: repo_repo }
+            - issues
+      # See: https://developer.github.com/v3/issues/#create-an-issue
+      title:
+        required: true
+      body:
+        required: false
+      auth:
+        required: true
+        type: cloudify.datatypes.auth
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: requests.cloudify_requests.request
+          inputs:
+            method:
+              default: POST
+            headers:
+              default:
+                User-Agent: cloudify-requests-plugin
+            files:
+              description: A list of cloudify.datatypes.requests.file.
+              default: []
+            data:
+              default: {}
+            json:
+              default:
+                title: { get_property: [SELF, title ] }
+                body: { get_property: [SELF, body ] }
+            params:
+              default: {} # not tested
+            auth:
+              default: { get_property: [SELF, auth ] }
+            cookies:
+              default: {} # not tested
+            hooks:
+              default: {} # not tested
+        delete: {}
+
+node_templates:
+
+  github_issue:
+    type: cloudify.nodes.github.Issue
+    properties:
+      title: { get_input: issue_title }
+      body: { get_input: issue_body }
+      auth: { get_input: auth }

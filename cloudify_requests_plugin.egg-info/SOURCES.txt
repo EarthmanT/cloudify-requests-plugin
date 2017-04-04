@@ -1,6 +1,0 @@
-cloudify_requests/__init__.py
-cloudify_requests_plugin.egg-info/PKG-INFO
-cloudify_requests_plugin.egg-info/SOURCES.txt
-cloudify_requests_plugin.egg-info/dependency_links.txt
-cloudify_requests_plugin.egg-info/requires.txt
-cloudify_requests_plugin.egg-info/top_level.txt

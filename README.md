@@ -100,7 +100,6 @@ A _node type_ has the following keys:
 * ```properties```: These are properties that we expect this _node type_ to make use of. These can be ```required``` or not (if the _node type_ doesn't say that it's required, then it's not.
 * ```interfaces```: This is how we map to plugin operations in the Python code.
 
-> **Explanation:**
 > This is how we bridge the markup language of the YAML Cloudify DSL and the Python functional programming of Cloudify plugins.
 
 
@@ -146,7 +145,7 @@ A _node type_ has the following keys:
 > * ```create``` expects two inputs, _method_ and _data_, which have default values provided.
 > * ```delete``` expects only one input _method_.
 
-_It was a design decision to use the same underlying method for the ```create``` and ```delete``` operations. Usually plugins use different functions. The reason for this diversion from the standard behavior is that both functions are instantiating a ```Request``` object with the contents of the operation inputs._
+_It was a design decision to use the same underlying method for the ```create``` and ```delete``` operations. Usually plugins use different functions. The reason for this diversion from the standard behavior is that both functions are instantiating a "prepared" ```Request``` object with the contents of the operation inputs._
 
 
 #### data_types
@@ -192,42 +191,54 @@ In the example above, the _cloudify.nodes.requests.Object_ node type ```endpoint
 
 ## Python Code Operation Mapping
 
-Like we said, the _cloudify.nodes.requests.Object_ node type points to the post and delete operations in the cloudify_requests package. These functions are found in the _cloudify_requests/__init__.py_ file.
+Like we said, the _cloudify.nodes.requests.Object_ node type points to the request function in the cloudify_requests package. This function is found in the _cloudify_requests/__init__.py_ file, though it could be found in any module in that package.
+
+**Example**
 
 ```python
 # cloudify_requests/__init__.py
 
-import requests
-
-from cloudify import ctx
-from cloudify.decorators import operation
-from cloudify.exceptions import NonRecoverableError
+# cut
 
 @operation
-def post(data, **_):
+def request(method,
+            url=None,
+            headers=None,
+            files=None,
+            data=None,
+            json=None,
+            params=None,
+            auth=None,
+            cookies=None,
+            hooks=None,
+            **_):
 
-    endpoint = ctx.node.properties.get('endpoint')
-    data = data or ctx.node.properties.get('configuration')
-    response = requests.post(endpoint, data=data)
+    if not url:
+        url = build_url_from_endpoint(ctx.node.properties.get('endpoint', {}))
 
-    if not response.ok:
-        raise NonRecoverableError('Failed: {0}'.format(response.content))
+    ctx.logger.debug('url: {0}'.format(url))
 
-    create_result = {
-        'status_code': response.status_code,
-        'content': response.content
-    }
+    # cut
 
-    ctx.instance.runtime_properties['create'] = create_result
+    try:
+        response = session.send(prepped)
+    except (RequestException, ConnectionError, HTTPError) as e:
+        raise NonRecoverableError('Exception raised: {0}'.format(str(e)))
 
-    ctx.logger.info('OK: {0}'.format(response.content))
+    # cut
+
 ```
 
-In this Python code, we see all the basics of Cloudify plugin development.
+> **Explanation**
+> In this Python code, we see all the basics of Cloudify plugin development.
+> First we imported Cloudify's developer context as ```ctx```. We also imported an operation decorator, which injects the ```ctx``` into our python function. We also imported a special Exception class, ```NonRecoverableError``` that we can use to tell Cloudify that a workflow has failed.
+> Then comes the request function. I've cut out most of the logic for brevity, but the following steps are included to understand some Cloudify development features.
+> * ```ctx.node.properties.get('endpoint', {})```: We use the ```ctx``` here to access the properties that we defined in our node type.
+> * ```ctx.logger.debug('url: {0}'.format(url))```: Sometimes it is useful to include some logging so that users can see what the plugin has done with their input. Available levels are ```info```, ```debug```, ```warning```, and ```error```.
+> * ```raise NonRecoverableError('Exception raised: {0}'.format(str(e)))```: If the request failed, we want to exit the workflow, so we raise the ```NonRecoverableError```.
 
-First we imported Cloudify's developer context. We also imported an operation decorator, which injects the developer context into our python function. We also imported a special Exception class that we can use to tell Cloudify that a workflow has failed.
+If you are curious the plugin code has further comments.
 
-Then comes the Python function. We access the node properties from the Cloudify CTX using _ctx.node.properties_. We take endpoint from there. We first check the data from the arguments to the function. If that's not available, we will take it from the node properties.
 
 ## Blueprint Examples
 
@@ -258,7 +269,7 @@ inputs:
   resource_configuration:
     default:
       plugin: cloudify-requests-plugin
-      version: 0.0.1.dev2
+      version: 0.0.1.dev3
       blueprint: test-blueprint.yaml
 
 node_templates:
@@ -272,3 +283,101 @@ node_templates:
         path: { get_input: path }
       configuration: { get_input: resource_configuration }
 ```
+
+Run the install workflow:
+
+```shell
+
+$ cfy install ~/Environments/Examples/cloudify-requests-plugin/resources/test-blueprint.yaml -i "{'path': ['hdw743hd73h']}"
+Processing inputs source: {'path': ['hdw743hd73h']}
+2017-04-04 14:58:41 CFY <local> Starting 'install' workflow execution
+2017-04-04 14:58:42 CFY <local> [cloudify_7hgqbt] Creating node
+2017-04-04 14:58:42 CFY <local> [cloudify_7hgqbt.create] Sending task 'cloudify_requests.request'
+2017-04-04 14:58:42 CFY <local> [cloudify_7hgqbt.create] Task started 'cloudify_requests.request'
+2017-04-04 14:58:42 LOG <local> [cloudify_7hgqbt.create] DEBUG: Building url from endpoint.
+2017-04-04 14:58:42 LOG <local> [cloudify_7hgqbt.create] DEBUG: url: http://requestb.in/hdw743hd73h
+2017-04-04 14:58:42 LOG <local> [cloudify_7hgqbt.create] DEBUG: headers: {}
+2017-04-04 14:58:42 LOG <local> [cloudify_7hgqbt.create] DEBUG: files: None
+2017-04-04 14:58:42 LOG <local> [cloudify_7hgqbt.create] DEBUG: data: {u'blueprint': u'test-blueprint.yaml', u'version': u'0.0.1.dev3', u'plugin': u'cloudify-requests-plugin'}
+2017-04-04 14:58:42 LOG <local> [cloudify_7hgqbt.create] DEBUG: json: None
+2017-04-04 14:58:42 LOG <local> [cloudify_7hgqbt.create] DEBUG: params: {}
+2017-04-04 14:58:42 LOG <local> [cloudify_7hgqbt.create] DEBUG: auth (keys): []
+2017-04-04 14:58:42 LOG <local> [cloudify_7hgqbt.create] DEBUG: cookies: {}
+2017-04-04 14:58:42 LOG <local> [cloudify_7hgqbt.create] DEBUG: hooks: {}
+2017-04-04 14:58:42 LOG <local> [cloudify_7hgqbt.create] INFO: Request OK: {'body': 'blueprint=test-blueprint.yaml&version=0.0.1.dev3&plugin=cloudify-requests-plugin', 'status_code': 200, 'content': 'ok'}
+2017-04-04 14:58:42 CFY <local> [cloudify_7hgqbt.create] Task succeeded 'cloudify_requests.request'
+2017-04-04 14:58:42 CFY <local> [cloudify_7hgqbt] Configuring node
+2017-04-04 14:58:43 CFY <local> [cloudify_7hgqbt] Starting node
+2017-04-04 14:58:43 CFY <local> 'install' workflow execution succeeded
+```
+
+Run the uninstall workflow:
+
+```shell
+$ cfy local execute -w uninstall -vv
+2017-04-04 14:58:46 CFY <local> Starting 'uninstall' workflow execution
+2017-04-04 14:58:46 CFY <local> [cloudify_7hgqbt] Stopping node
+2017-04-04 14:58:47 CFY <local> [cloudify_7hgqbt] Deleting node
+2017-04-04 14:58:47 CFY <local> [cloudify_7hgqbt.delete] Sending task 'cloudify_requests.request'
+2017-04-04 14:58:47 CFY <local> [cloudify_7hgqbt.delete] Task started 'cloudify_requests.request'
+2017-04-04 14:58:47 LOG <local> [cloudify_7hgqbt.delete] DEBUG: Building url from endpoint.
+2017-04-04 14:58:47 LOG <local> [cloudify_7hgqbt.delete] DEBUG: url: http://requestb.in/hdw743hd73h
+2017-04-04 14:58:47 LOG <local> [cloudify_7hgqbt.delete] DEBUG: headers: {}
+2017-04-04 14:58:47 LOG <local> [cloudify_7hgqbt.delete] DEBUG: files: None
+2017-04-04 14:58:47 LOG <local> [cloudify_7hgqbt.delete] DEBUG: data: {u'blueprint': u'test-blueprint.yaml', u'version': u'0.0.1.dev3', u'plugin': u'cloudify-requests-plugin'}
+2017-04-04 14:58:47 LOG <local> [cloudify_7hgqbt.delete] DEBUG: json: None
+2017-04-04 14:58:47 LOG <local> [cloudify_7hgqbt.delete] DEBUG: params: {}
+2017-04-04 14:58:47 LOG <local> [cloudify_7hgqbt.delete] DEBUG: auth (keys): []
+2017-04-04 14:58:47 LOG <local> [cloudify_7hgqbt.delete] DEBUG: cookies: {}
+2017-04-04 14:58:47 LOG <local> [cloudify_7hgqbt.delete] DEBUG: hooks: {}
+2017-04-04 14:58:47 LOG <local> [cloudify_7hgqbt.delete] INFO: Request OK: {'body': 'blueprint=test-blueprint.yaml&version=0.0.1.dev3&plugin=cloudify-requests-plugin', 'status_code': 200, 'content': 'ok'}
+2017-04-04 14:58:47 CFY <local> [cloudify_7hgqbt.delete] Task succeeded 'cloudify_requests.request'
+2017-04-04 14:58:47 CFY <local> 'uninstall' workflow execution succeeded
+```
+
+
+## Executing the Github Issue Blueprint Example
+
+Run the install workflow:
+
+```shell
+
+$ cfy install ~/Environments/Examples/cloudify-requests-plugin/resources/test-github-blueprint.yaml -i "
+auth: { 'username': 'myusername', 'password': 'mypassword' }
+'issue_title': 'We want more features'
+'issue_body': 'Some examples: Intelligently decide between passing configuration to data, json, or params.'
+"
+2017-04-04 14:48:37 CFY <local> Starting 'install' workflow execution
+2017-04-04 14:48:37 CFY <local> [github_issue_r1x1iu] Creating node
+2017-04-04 14:48:37 CFY <local> [github_issue_r1x1iu.create] Sending task 'cloudify_requests.request'
+2017-04-04 14:48:38 CFY <local> [github_issue_r1x1iu.create] Task started 'cloudify_requests.request'
+2017-04-04 14:48:38 LOG <local> [github_issue_r1x1iu.create] DEBUG: Building url from endpoint.
+2017-04-04 14:48:38 LOG <local> [github_issue_r1x1iu.create] DEBUG: url: https://api.github.com/repos/earthmant/cloudify-requests-plugin/issues
+2017-04-04 14:48:38 LOG <local> [github_issue_r1x1iu.create] DEBUG: headers: {u'User-Agent': u'cloudify-requests-plugin'}
+2017-04-04 14:48:38 LOG <local> [github_issue_r1x1iu.create] DEBUG: files: None
+2017-04-04 14:48:38 LOG <local> [github_issue_r1x1iu.create] DEBUG: data: None
+2017-04-04 14:48:38 LOG <local> [github_issue_r1x1iu.create] DEBUG: json: {u'body': u'Some examples: Intelligently decide between passing configuration to data, json, or params.', u'title': u'We want more features'}
+2017-04-04 14:48:38 LOG <local> [github_issue_r1x1iu.create] DEBUG: params: {}
+2017-04-04 14:48:38 LOG <local> [github_issue_r1x1iu.create] DEBUG: auth (keys): [u'username', u'password']
+2017-04-04 14:48:38 LOG <local> [github_issue_r1x1iu.create] DEBUG: cookies: {}
+2017-04-04 14:48:38 LOG <local> [github_issue_r1x1iu.create] DEBUG: hooks: {}
+2017-04-04 14:48:38 LOG <local> [github_issue_r1x1iu.create] INFO: Request OK: {'body': '{"body": "Some examples: Intelligently decide between passing configuration to data, json, or params.", "title": "We want more features"}', 'status_code': 201, 'content': '{"url":"https://api.github.com/repos/EarthmanT/cloudify-requests-plugin/issues/3","repository_url":"https://api.github.com/repos/EarthmanT/cloudify-requests-plugin","labels_url":"https://api.github.com/repos/EarthmanT/cloudify-requests-plugin/issues/3/labels{/name}","comments_url":"https://api.github.com/repos/EarthmanT/cloudify-requests-plugin/issues/3/comments","events_url":"https://api.github.com/repos/EarthmanT/cloudify-requests-plugin/issues/3/events","html_url":"https://github.com/EarthmanT/cloudify-requests-plugin/issues/3","id":219224312,"number":3,"title":"We want more features","user":{"login":"EarthmanT","id":9653571,"avatar_url":"https://avatars1.githubusercontent.com/u/9653571?v=3","gravatar_id":"","url":"https://api.github.com/users/EarthmanT","html_url":"https://github.com/EarthmanT","followers_url":"https://api.github.com/users/EarthmanT/followers","following_url":"https://api.github.com/users/EarthmanT/following{/other_user}","gists_url":"https://api.github.com/users/EarthmanT/gists{/gist_id}","starred_url":"https://api.github.com/users/EarthmanT/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/EarthmanT/subscriptions","organizations_url":"https://api.github.com/users/EarthmanT/orgs","repos_url":"https://api.github.com/users/EarthmanT/repos","events_url":"https://api.github.com/users/EarthmanT/events{/privacy}","received_events_url":"https://api.github.com/users/EarthmanT/received_events","type":"User","site_admin":false},"labels":[],"state":"open","locked":false,"assignee":null,"assignees":[],"milestone":null,"comments":0,"created_at":"2017-04-04T11:48:38Z","updated_at":"2017-04-04T11:48:38Z","closed_at":null,"body":"Some examples: Intelligently decide between passing configuration to data, json, or params.","closed_by":null}'}
+2017-04-04 14:48:38 CFY <local> [github_issue_r1x1iu.create] Task succeeded 'cloudify_requests.request'
+2017-04-04 14:48:39 CFY <local> [github_issue_r1x1iu] Configuring node
+2017-04-04 14:48:39 CFY <local> [github_issue_r1x1iu] Starting node
+2017-04-04 14:48:40 CFY <local> 'install' workflow execution succeeded
+```
+
+**No uninstall workflow is defined in the github example.**
+
+
+## Testing Plugins
+
+There are two kinds of tests in plugins:
+
+* unit tests: test particular functions
+* workflow tests: test workflows
+
+Together these tests should cover over 90% of the Python plugin code.
+
+We also require that the plugin Python code passes ```flake8``` validation.

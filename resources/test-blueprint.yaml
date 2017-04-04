@@ -35,7 +35,7 @@ inputs:
   resource_configuration:
     default:
       plugin: cloudify-requests-plugin
-      version: 0.0.1.dev1
+      version: 0.0.1.dev3
       blueprint: test-blueprint.yaml
 
 node_templates:

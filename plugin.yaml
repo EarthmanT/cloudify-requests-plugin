@@ -4,7 +4,7 @@ plugins:
     executor: central_deployment_agent
     source: https://github.com/cloudify-examples/cloudify-requests-plugin/archive/master.zip
     package_name: cloudify-requests-plugin
-    package_version: '0.0.1.dev2'
+    package_version: '0.0.1.dev3'
 
 data_types:
 
@@ -24,6 +24,32 @@ data_types:
       path:
         description: >
           Additional URI path.
+
+  cloudify.datatypes.file:
+    properties:
+      filename:
+        description: >
+          The filename as you want to send it in the request.
+        type: string
+        required: true
+      path:
+        description: >
+          The path relative to the blueprint.yaml the file is packaged with the blueprint. Note: this and url are mutually exclusive.
+          The plugin will check this first.
+        type: string
+        required: false
+      url:
+        description: >
+          If the file should be downloaded from a URL. Note: this and path are mutually exclusive.
+        type: cloudify.datatypes.URI
+        required: false
+
+  cloudify.datatypes.auth:
+    properties:
+      username:
+        required: true
+      password:
+        required: true
 
 node_types:
 
@@ -46,10 +72,44 @@ node_types:
           inputs:
             method:
               default: POST
+            headers:
+              default: {} # not tested
+            files:
+              description: A list of cloudify.datatypes.requests.file.
+              default: []
             data:
+              default: { get_property: [ SELF, configuration ] }
+            json:
+              default: {} # not tested
+            params:
+              default: {} # not tested
+            auth:
+              description: A username and password in cloudify.datatypes.auth.
               default: {}
+            cookies:
+              default: {} # not tested
+            hooks:
+              default: {} # not tested
         delete:
           implementation: requests.cloudify_requests.request
           inputs:
             method:
               default: DELETE
+            headers:
+              default: {} # not tested
+            files:
+              description: A list of cloudify.datatypes.file.
+              default: []
+            data:
+              default: {}
+            json:
+              default: {} # not tested
+            params:
+              default: {} # not tested
+            auth:
+              description: A username and password in cloudify.datatypes.auth.
+              default: {}
+            cookies:
+              default: {} # not tested
+            hooks:
+              default: {} # not tested
