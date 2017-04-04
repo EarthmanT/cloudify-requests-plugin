@@ -1,7 +1,13 @@
 # cloudify-requests-plugin
 ==========================
 
-A Cloudify plugin that is useful both for interacting with generic APIs and as an example for writing custom plugins.
+A Cloudify plugin for making HTTP requests.
+
+**Note:**
+_This plugin is intended as an example._
+It also works! Like this plugin, most plugins are wrappers around some technology. Most frequently, a plugin will be based on the Python bindings for a particular API, such as AWS (boto), Openstack (novaclient-python), Docker (docker-py), etc. Also a plugin is frequently based on a generic library such as fabric, subprocess or requests. This plugin is kept generic, although another plugin based on requests might make design decisions to better support a specific target API.
+**Please read this README completely for instructions on writing your own plugin.**
+
 
 ## Plugin directory structure
 
@@ -11,16 +17,22 @@ Therefore it must comprise a _setup.py_ file and a python package.
 
 Additionally, you should provide a plugin.yaml, so that the plugin can be imported in Cloudify blueprints.
 
+Below is the minimum required directory structure for a Cloudify plugin:
+
 ```shell
 .
 ├── README.md # A readme that describes usage.
 ├── cloudify_requests # the python package
 │   ├── __init__.py # __init__.py file, a fundamental requirement of a python package.
-├── plugin.yaml # A plugin yaml for Cloudify DSL import validation.
+├── (plugin.yaml)[#Contents of plugin.yaml] # A plugin yaml for Cloudify DSL import validation.
 └── setup.py # a python project setup.py.
 ```
 
-## Contents of plugin.yaml
+Over time your directory structure will naturally become more complex, but this is the basis.
+
+
+
+### Contents of plugin.yaml
 
 The _plugin.yaml_ is the interaction between the Cloudify DSL and the plugin Python code.
 
@@ -66,11 +78,13 @@ In this _cloudify.nodes.requests.Object_, we say that the code for the create an
 
 We also give the _cloudify.nodes.requests.Object node type two expected properties: _endpoint_ and _configuration_. The _endpoint_ property has a data type validation, while the _configuration property has no validation other than that its default value is an empty dictionary.
 
-#### Operation Mapping
+## Python Code Operation Mapping
 
 Like we said, the _cloudify.nodes.requests.Object_ node type points to the post and delete operations in the cloudify_requests package. These functions are found in the _cloudify_requests/__init__.py_ file.
 
 ```python
+# cloudify_requests/__init__.py
+
 import requests
 
 from cloudify import ctx
@@ -103,11 +117,14 @@ First we imported Cloudify's developer context. We also imported an operation de
 
 Then comes the Python function. We access the node properties from the Cloudify CTX using _ctx.node.properties_. We take endpoint from there. We first check the data from the arguments to the function. If that's not available, we will take it from the node properties.
 
-#### Example and Test Blueprint Resources
+## Blueprint Examples
 
 It is a good idea to publish in the plugin repository any blueprints that you use to test the functionality of your plugin.
 
+These go in the resources folder.
+
 ```yaml
+# resources/test-blueprint.yaml
 tosca_definitions_version: cloudify_dsl_1_3
 
 imports:
