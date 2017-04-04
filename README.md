@@ -3,10 +3,11 @@
 
 A Cloudify plugin for making HTTP requests.
 
-**Note:**
+**Please read this README completely for instructions on writing your own plugin.**
+
 _This plugin is intended as an example._
 It also works! Like this plugin, most plugins are wrappers around some technology. Most frequently, a plugin will be based on the Python bindings for a particular API, such as AWS (boto), Openstack (novaclient-python), Docker (docker-py), etc. Also a plugin is frequently based on a generic library such as fabric, subprocess or requests. This plugin is kept generic, although another plugin based on requests might make design decisions to better support a specific target API.
-**Please read this README completely for instructions on writing your own plugin.**
+
 
 
 ## Plugin directory structure
@@ -24,12 +25,38 @@ Below is the minimum required directory structure for a Cloudify plugin:
 ├── README.md # A readme that describes usage.
 ├── cloudify_requests # the python package
 │   ├── __init__.py # __init__.py file, a fundamental requirement of a python package.
-├── (plugin.yaml)[#Contents of plugin.yaml] # A plugin yaml for Cloudify DSL import validation.
+├── plugin.yaml # A plugin yaml for Cloudify DSL import validation.
 └── setup.py # a python project setup.py.
 ```
 
-Over time your directory structure will naturally become more complex, but this is the basis.
+### The setup.py file
 
+The ```setup.py``` contains the setup method from setuptools. It should at the very least provide:
+
+* The ```name``` of the plugin. This should follow the convention cloudify-[name-of-project-to-support]-plugin.
+* The ```author```. This should be either your name or your team's name.
+* The ```author_email```. This is where users can turn for information about support, legal, etc.
+* The ```version```. This should be kept up to date.
+* The ```description```. Something short.
+* A list of ```packages``` in the plugin. More about this later.
+* A list of required libraries in ```install_requires```. Anything that is not shipped with Python.
+
+
+```python
+
+from setuptools import setup
+
+setup(
+    name='cloudify-requests-plugin',
+    author='Cloudify by Gigaspaces',
+    author_email='hello@getcloudify.com',
+    version='0.0.1.dev0',
+    description='Cloudify plugin for HTTP Requests.',
+    packages=['cloudify_requests'],
+    install_requires=['cloudify-plugins-common>=4.0', 'requests>=2.13.0']
+)
+
+```
 
 
 ### Contents of plugin.yaml
