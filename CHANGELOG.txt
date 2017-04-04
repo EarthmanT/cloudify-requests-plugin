@@ -8,3 +8,7 @@
 0.0.1.dev2:
   - Generalized the request function takes method as input.
   - Added test-blueprint.yaml
+0.0.1:
+  - Added Support for Auth
+  - Added Suppport for Files
+  - Added Plugin Tests
