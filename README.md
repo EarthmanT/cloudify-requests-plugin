@@ -83,7 +83,7 @@ plugins:
     executor: central_deployment_agent
 ```
 
-Here, ```requests``` is the project-name. The ```executor``` specifies which Cloudify agent will execute the plugin. The _central_deployment_agent_ indicates that the if the plugin is executed by a Cloudify Manager, then the worker agent on the manager will execute. If we use ```host_agent``` instead, then the agent worker on a managed host would execute the code.
+> Here, ```requests``` is the project-name. The ```executor``` specifies which Cloudify agent will execute the plugin. The _central_deployment_agent_ indicates that the if the plugin is executed by a Cloudify Manager, then the worker agent on the manager will execute. If we use ```host_agent``` instead, then the agent worker on a managed host would execute the code.
 
 **Note:** The ```host_agent``` executor is not recognized in _cfy local_.
 
@@ -100,6 +100,7 @@ A _node type_ has the following keys:
 * ```properties```: These are properties that we expect this _node type_ to make use of. These can be ```required``` or not (if the _node type_ doesn't say that it's required, then it's not.
 * ```interfaces```: This is how we map to plugin operations in the Python code.
 
+> **Explanation:**
 > This is how we bridge the markup language of the YAML Cloudify DSL and the Python functional programming of Cloudify plugins.
 
 
@@ -119,19 +120,34 @@ A _node type_ has the following keys:
           No validation is provided for the cloudify.nodes.requests.Object type.
         default: {}
     interfaces:
-      cloudify.lifecycle.interfaces:
+      cloudify.interfaces.lifecycle:
         create:
-          implementation: requests.cloudify_requests.post
+          implementation: requests.cloudify_requests.request
           inputs:
+            method:
+              default: POST
             data:
               default: {}
         delete:
-          implementation: requests.cloudify_requests.delete
+          implementation: requests.cloudify_requests.request
+          inputs:
+            method:
+              default: DELETE
 ```
 
-In this _cloudify.nodes.requests.Object_, we say that the code for the create and delete operations is in the cloudify_requests package under the post and delete operations. We also add an expected input _data_ for the post operation.
+> **Explanation:**
+> Two properties are defined for the _cloudify.nodes.requests.Object_ node type:
+>
+> * ```endpoint```: Endpoint is validated by the _cloudify.datatypes.URI_ data type. (More about this later.)
+> * ```configuration``` has no type validation, but has a default value - an empty dictionary.
+>
+> Two _cloudify.interfaces.lifecycle_ operations are defined as well, which are both mapped to the same Python function ```request```.
+>
+> * ```create``` expects two inputs, _method_ and _data_, which have default values provided.
+> * ```delete``` expects only one input _method_.
 
-We also give the _cloudify.nodes.requests.Object node type two expected properties: _endpoint_ and _configuration_. The _endpoint_ property has a data type validation, while the _configuration property has no validation other than that its default value is an empty dictionary.
+_It was a design decision to use the same underlying method for the ```create``` and ```delete``` operations. Usually will use different functions._
+
 
 ## Python Code Operation Mapping
 
