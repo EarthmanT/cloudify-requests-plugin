@@ -146,7 +146,48 @@ A _node type_ has the following keys:
 > * ```create``` expects two inputs, _method_ and _data_, which have default values provided.
 > * ```delete``` expects only one input _method_.
 
-_It was a design decision to use the same underlying method for the ```create``` and ```delete``` operations. Usually will use different functions._
+_It was a design decision to use the same underlying method for the ```create``` and ```delete``` operations. Usually plugins use different functions. The reason for this diversion from the standard behavior is that both functions are instantiating a ```Request``` object with the contents of the operation inputs._
+
+
+#### data_types
+
+Data types are used to provide Cloudify DSL validation to complex data structures (basically, meaning not an int or a string).
+
+This is useful for a number of scenarios:
+
+* The property expects a property with specific keys.
+* Extra documention about the property.
+* Providing input for data that when instantiated by a Python object, are not JSON serializable.
+
+In the example above, the _cloudify.nodes.requests.Object_ node type ```endpoint``` property is validated by the _cloudify.datatypes.UI_ data types. This data type defines the anatomy of a URI:
+
+
+```yaml
+  cloudify.datatypes.URI:
+    properties:
+      protocol:
+        description: >
+          The protocol.
+        type: string
+        default: 'http'
+      domain:
+        description: >
+          The domain.
+        type: string
+        required: true
+      path:
+        description: >
+          Additional paths.
+      default: []
+```
+
+> **Explanation:**
+> Three properties are defined for the _cloudify.datatypes.URI_ data type:
+>
+> * ```protocol```: This is generally going to be _http_ or _https_.
+> * ```domain```: This is the domain such as _api.github.com_.
+> * ```path```: For example, ```[user, repo]```.
+
 
 
 ## Python Code Operation Mapping
