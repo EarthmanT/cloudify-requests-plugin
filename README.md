@@ -73,7 +73,7 @@ The most critical section is the ```plugins``` definition. Other frequently used
 
 #### plugins definition
 
-The essential feature of the plugin.yaml file is the plugins definition.
+The essential feature of the _plugin.yaml_ file is the plugins definition.
 
 It has the following format:
 
@@ -83,11 +83,27 @@ plugins:
     executor: central_deployment_agent
 ```
 
-Here, ```requests``` is the project-name. The ```executor``` specifies which Cloudify agent will execute the plugin. The _central_deployment_agent_ indicates that the if the plugin is executed by a Cloudify Manager, then the worker agent on the manager will execute. If we use ```host_agent``` instead, then the agent worker on a managed host would execute the code. The ```host_agent``` executor is not recognized in _cfy local_.
+Here, ```requests``` is the project-name. The ```executor``` specifies which Cloudify agent will execute the plugin. The _central_deployment_agent_ indicates that the if the plugin is executed by a Cloudify Manager, then the worker agent on the manager will execute. If we use ```host_agent``` instead, then the agent worker on a managed host would execute the code.
+
+**Note:** The ```host_agent``` executor is not recognized in _cfy local_.
+
 
 #### node_types
 
-A _node type_ is used to define resource types, which are then used in blueprints as _node templates_. The node type maps to plugin operations in the Python code. The node type also defines the which properties might be expected.
+A _node type_ is used to define resource types, which are then _derived_by_ other ```node_types```, or they may be used in blueprints by ```node_templates```.
+
+The _node type_ also defines the which properties might be expected.
+
+A _node type_ has the following keys:
+
+* ```derived_from```: This is another base _node type_.
+* ```properties```: These are properties that we expect this _node type_ to make use of. These can be ```required``` or not (if the _node type_ doesn't say that it's required, then it's not.
+* ```interfaces```: This is how we map to plugin operations in the Python code.
+
+> This is how we bridge the markup language of the YAML Cloudify DSL and the Python functional programming of Cloudify plugins.
+
+
+**Example:**
 
 ```yaml
   cloudify.nodes.requests.Object:
