@@ -34,7 +34,26 @@ def request(method,
             cookies=None,
             hooks=None,
             **_):
+    """
+    execute requests for cloudify-request-plugin operations
 
+    The following parameters are used to build the prepared request object.
+
+    :param method:
+    :param url:
+    :param headers:
+    :param files:
+    :param data:
+    :param json:
+    :param params:
+    :param auth:
+    :param cookies:
+    :param hooks:
+    :param _:
+    :return:
+    """
+
+    # If a URL was passed to the function it will override the endpoint.
     if not url:
         url = build_url_from_endpoint(ctx.node.properties.get('endpoint', {}))
 
@@ -42,11 +61,13 @@ def request(method,
 
     ctx.logger.debug('headers: {0}'.format(headers))
 
+    # transform the list of files into a dictionary of files as required.
     files_dictionary = \
         None if not files else create_files_dictionary_from_files_list(files)
 
     ctx.logger.debug('files: {0}'.format(files_dictionary))
 
+    # configuration is translated as data
     data = data if data else ctx.node.properties.get('configuration')
 
     ctx.logger.debug('data: {0}'.format(data))
@@ -57,6 +78,8 @@ def request(method,
 
     ctx.logger.debug('params: {0}'.format(params))
 
+    # transform the cloudify.datatypes.auth structure
+    # to a requests auth object
     auth_object = None if not auth else create_auth_object_from_data_type(auth)
 
     ctx.logger.debug('auth (keys): {0}'.format(auth.keys()))
@@ -97,6 +120,12 @@ def request(method,
 
 
 def build_url_from_endpoint(endpoint):
+    """
+    create the url from the cloudify.datatypes.uri structure.
+
+    :param endpoint:
+    :return:
+    """
 
     ctx.logger.debug('Building url from endpoint.')
 
@@ -112,6 +141,12 @@ def build_url_from_endpoint(endpoint):
 
 
 def create_files_dictionary_from_files_list(_files):
+    """
+    Transform the list of files into a dict of files.
+
+    :param _files: list of cloudify.datatypes.file data structures.
+    :return:
+    """
 
     _file_dictionary = {}
 
@@ -137,6 +172,13 @@ def create_files_dictionary_from_files_list(_files):
 
 
 def create_auth_object_from_data_type(_auth):
+    """
+    Build an auth object.
+    Right now only requests.auth.HTTPBasicAuth object is supported.
+
+    :param _auth: a dict containing username and password.
+    :return: HTTPBasicAuth object.
+    """
     username = _auth.get('username')
     password = _auth.get('password')
     if not username or not password:
